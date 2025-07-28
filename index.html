@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSL/TLS Certificate Analyzer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-bg: #0f172a;
+            --dark-surface: #1e293b;
+            --dark-border: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .header {
+            background: var(--dark-surface);
+            border-bottom: 1px solid var(--dark-border);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo i {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--text-primary);
+            background: var(--primary-color);
+        }
+
+        .main {
+            padding: 2rem 0;
+            min-height: calc(100vh - 140px);
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .hero h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary-color), #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .analysis-form {
+            background: var(--dark-surface);
+            border: 1px solid var(--dark-border);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--dark-bg);
+            border: 1px solid var(--dark-border);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            background: var(--dark-surface);
+            border: 1px solid var(--dark-border);
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .spinner {
+            width: 3rem;
+            height: 3rem;
+            border: 3px solid var(--dark-border);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .results {
+            background: var(--dark-surface);
+            border: 1px solid var(--dark-border);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .result-card {
+            background: var(--dark-bg);
+            border: 1px solid var(--dark-border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .domain-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .security-score {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .score-excellent { background: var(--success-color); color: white; }
+        .score-good { background: #059669; color: white; }
+        .score-warning { background: var(--warning-color); color: white; }
+        .score-danger { background: var(--danger-color); color: white; }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-section {
+            background: var(--dark-surface);
+            border: 1px solid var(--dark-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+
+        .result-section h4 {
+            margin-bottom: 0.75rem;
+            color: var(--primary-color);
+            font-size: 1rem;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0;
+        }
+
+        .result-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .result-value {
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .vulnerability {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .footer {
+            background: var(--dark-surface);
+            border-top: 1px solid var(--dark-border);
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .footer p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero h2 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <h1>SSL Analyzer</h1>
+                </div>
+                <nav class="nav">
+                    <a href="#" class="nav-link active">Analyze</a>
+                    <a href="https://github.com/sammtan/ssl-analyzer" class="nav-link" target="_blank">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="hero">
+                <h2>SSL/TLS Certificate Analyzer</h2>
+                <p>Comprehensive security analysis for SSL/TLS certificates and configurations. Get detailed insights into certificate validity, cipher suites, and potential vulnerabilities.</p>
+            </div>
+
+            <div class="analysis-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="domain">Domain Name</label>
+                        <input type="text" id="domain" placeholder="example.com" />
+                    </div>
+                    <div class="form-group">
+                        <label for="port">Port</label>
+                        <input type="number" id="port" value="443" />
+                    </div>
+                    <div class="form-group">
+                        <label for="timeout">Timeout (s)</label>
+                        <input type="number" id="timeout" value="10" />
+                    </div>
+                </div>
+                <button id="analyzeBtn" class="btn btn-primary">
+                    <i class="fas fa-search"></i>
+                    Analyze Certificate
+                </button>
+            </div>
+
+            <div id="loading" class="loading hidden">
+                <div class="spinner"></div>
+                <h3>Analyzing SSL Certificate...</h3>
+                <p>This may take a few moments</p>
+            </div>
+
+            <div id="results" class="results hidden">
+                <h3>Analysis Results</h3>
+                <div id="resultsContent"></div>
+            </div>
+
+            <div class="analysis-form">
+                <h3 style="margin-bottom: 1rem;"><i class="fas fa-info-circle"></i> Demo Notice</h3>
+                <p style="color: var(--text-secondary); line-height: 1.6;">
+                    This is a client-side demo version running in your browser. For full functionality including batch analysis and advanced features, 
+                    please check out the <a href="https://github.com/sammtan/ssl-analyzer" style="color: var(--primary-color);">GitHub repository</a> 
+                    and run the Python application locally.
+                </p>
+                <br>
+                <p style="color: var(--text-muted); font-size: 0.875rem;">
+                    <strong>Note:</strong> This demo uses browser-based analysis with limited capabilities compared to the full Python version.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 SSL Analyzer. Educational and authorized testing purposes only.</p>
+        </div>
+    </footer>
+
+    <script>
+        class SSLAnalyzerDemo {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                document.getElementById('analyzeBtn').addEventListener('click', () => this.analyze());
+                document.getElementById('domain').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.analyze();
+                });
+            }
+
+            async analyze() {
+                const domain = document.getElementById('domain').value.trim();
+                const port = parseInt(document.getElementById('port').value) || 443;
+
+                if (!domain) {
+                    alert('Please enter a domain name');
+                    return;
+                }
+
+                this.showLoading();
+
+                try {
+                    // Simulate analysis for demo purposes
+                    await this.sleep(2000);
+                    
+                    const result = this.generateDemoResult(domain, port);
+                    this.displayResult(result);
+                } catch (error) {
+                    this.showError(error.message);
+                } finally {
+                    this.hideLoading();
+                }
+            }
+
+            generateDemoResult(domain, port) {
+                const isSecure = Math.random() > 0.3;
+                const score = isSecure ? Math.floor(Math.random() * 30) + 70 : Math.floor(Math.random() * 50) + 20;
+                
+                return {
+                    hostname: domain,
+                    port: port,
+                    security_score: score,
+                    certificate: {
+                        subject: { commonName: domain },
+                        issuer: { organizationName: 'Demo CA' },
+                        not_after: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+                        days_until_expiry: 90,
+                        key_size: 2048,
+                        signature_algorithm: 'sha256WithRSAEncryption',
+                        expires_soon: false
+                    },
+                    cipher_suite: {
+                        name: 'TLS_AES_256_GCM_SHA384',
+                        strength: 'Strong',
+                        supports_forward_secrecy: true
+                    },
+                    protocol_version: {
+                        version: 'TLSv1.3'
+                    },
+                    vulnerabilities: isSecure ? [] : [
+                        {
+                            type: 'Weak Cipher',
+                            severity: 'Medium',
+                            description: 'This is a demo vulnerability for illustration purposes',
+                            impact: 'Potential security weakness'
+                        }
+                    ]
+                };
+            }
+
+            displayResult(result) {
+                const scoreClass = this.getScoreClass(result.security_score);
+                const cert = result.certificate;
+                const cipher = result.cipher_suite;
+                const protocol = result.protocol_version;
+
+                const html = `
+                    <div class="result-card">
+                        <div class="result-header">
+                            <div class="domain-title">${result.hostname}:${result.port}</div>
+                            <div class="security-score ${scoreClass}">${result.security_score}/100</div>
+                        </div>
+                        
+                        <div class="result-grid">
+                            <div class="result-section">
+                                <h4><i class="fas fa-certificate"></i> Certificate Info</h4>
+                                <div class="result-item">
+                                    <span class="result-label">Subject:</span>
+                                    <span class="result-value">${cert.subject.commonName}</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">Issuer:</span>
+                                    <span class="result-value">${cert.issuer.organizationName}</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">Valid Until:</span>
+                                    <span class="result-value">${new Date(cert.not_after).toLocaleDateString()}</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">Days Until Expiry:</span>
+                                    <span class="result-value">${cert.days_until_expiry}</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">Key Size:</span>
+                                    <span class="result-value">${cert.key_size} bits</span>
+                                </div>
+                            </div>
+                            
+                            <div class="result-section">
+                                <h4><i class="fas fa-shield-alt"></i> Security Info</h4>
+                                <div class="result-item">
+                                    <span class="result-label">Protocol:</span>
+                                    <span class="result-value">${protocol.version}</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">Cipher Suite:</span>
+                                    <span class="result-value">${cipher.name}</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">Cipher Strength:</span>
+                                    <span class="result-value">${cipher.strength}</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">Forward Secrecy:</span>
+                                    <span class="result-value">${cipher.supports_forward_secrecy ? 'Yes' : 'No'}</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">Signature Algorithm:</span>
+                                    <span class="result-value">${cert.signature_algorithm}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${result.vulnerabilities.length > 0 ? `
+                            <div class="result-section">
+                                <h4><i class="fas fa-exclamation-triangle"></i> Vulnerabilities (${result.vulnerabilities.length})</h4>
+                                ${result.vulnerabilities.map(vuln => `
+                                    <div class="vulnerability">
+                                        <strong>${vuln.type}</strong> (${vuln.severity})
+                                        <br><small>${vuln.description}</small>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3); border-radius: 0.5rem; padding: 1rem; margin-top: 1rem;">
+                        <strong><i class="fas fa-info-circle"></i> Demo Results</strong>
+                        <br><small style="color: var(--text-secondary);">These are simulated results for demonstration. For real SSL analysis, please use the full Python application from the GitHub repository.</small>
+                    </div>
+                `;
+
+                document.getElementById('resultsContent').innerHTML = html;
+                document.getElementById('results').classList.remove('hidden');
+                document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+            }
+
+            getScoreClass(score) {
+                if (score >= 90) return 'score-excellent';
+                if (score >= 75) return 'score-good';
+                if (score >= 50) return 'score-warning';
+                return 'score-danger';
+            }
+
+            showLoading() {
+                document.getElementById('loading').classList.remove('hidden');
+                document.getElementById('results').classList.add('hidden');
+                document.getElementById('analyzeBtn').disabled = true;
+            }
+
+            hideLoading() {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+
+            showError(message) {
+                document.getElementById('resultsContent').innerHTML = `
+                    <div class="vulnerability">
+                        <strong>Analysis Error</strong>
+                        <br><small>${message}</small>
+                    </div>
+                `;
+                document.getElementById('results').classList.remove('hidden');
+            }
+
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        // Initialize the demo when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new SSLAnalyzerDemo();
+        });
+    </script>
+</body>
+</html>
