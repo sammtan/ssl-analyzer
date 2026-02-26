@@ -1,16 +1,17 @@
 # SSL/TLS Certificate Analyzer
 
-A comprehensive Python-based tool for analyzing SSL/TLS certificates and security configurations. This tool provides detailed insights into certificate validity, cipher suites, protocol versions, and potential security vulnerabilities.
+An educational Python-based tool for analyzing SSL/TLS certificates and security configurations. This tool provides detailed insights into certificate details, cipher suites, protocol versions, and a basic set of common security issues.
 
 ## 🚀 Features
 
-- **Certificate Analysis**: Detailed certificate information including validity, issuer, subject, and extensions
-- **Security Assessment**: Identifies vulnerabilities like expired certificates, weak cipher suites, and deprecated protocols
-- **Protocol Version Analysis**: Checks for secure TLS versions and flags deprecated protocols
+- **Certificate Analysis**: Detailed certificate information including validity, issuer, subject, SANs, extensions, and fingerprints
+- **Protocol Version Analysis**: Identifies the negotiated TLS version and flags deprecated protocols
 - **Cipher Suite Evaluation**: Analyzes encryption strength and forward secrecy support
-- **Vulnerability Detection**: Scans for common SSL/TLS security issues
+- **Basic Vulnerability Checks**: Detects ~6 common SSL/TLS issues (see [What It Analyzes](#-what-it-analyzes))
 - **Multiple Output Formats**: Supports text, JSON, and HTML report formats
-- **Comprehensive Reporting**: Includes security recommendations and overall security score
+- **Security Scoring**: Includes an overall security score and actionable recommendations
+- **Web Interface**: Browser-based UI built with Flask
+- **CLI & Batch Analysis**: Command-line interface with argparse; supports analyzing multiple domains
 
 ## 📋 Requirements
 
@@ -171,23 +172,26 @@ SECURITY RECOMMENDATIONS
 
 ### Certificate Details
 - **Validity Period**: Checks if certificate is expired or expiring soon
-- **Key Size**: Ensures adequate key strength (minimum 2048 bits for RSA)
+- **Key Size**: Checks key strength (RSA keys below 2048 bits flagged)
 - **Signature Algorithm**: Identifies weak signature algorithms (MD5, SHA1)
 - **Subject Alternative Names**: Lists all domains covered by the certificate
 - **Issuer Information**: Certificate authority details
-- **Extensions**: Critical certificate extensions
+- **Extensions**: Critical certificate extensions and fingerprints
 
 ### Protocol Security
-- **TLS Version**: Identifies deprecated protocols (SSLv2, SSLv3, TLS 1.0, TLS 1.1)
-- **Cipher Suite**: Analyzes encryption strength and algorithms
+- **TLS Version**: Identifies the **negotiated** protocol version and flags deprecated protocols (SSLv2, SSLv3, TLS 1.0, TLS 1.1)
+- **Cipher Suite**: Analyzes the **negotiated** cipher's encryption strength and algorithms
 - **Forward Secrecy**: Checks for Perfect Forward Secrecy support
-- **Deprecated Ciphers**: Flags weak ciphers (RC4, DES, 3DES, NULL, EXPORT)
+- **Weak Ciphers**: Flags insecure cipher algorithms (RC4, DES, 3DES, NULL, EXPORT)
 
-### Vulnerability Detection
-- **Certificate Expiration**: Alerts for expired or soon-to-expire certificates
-- **Weak Encryption**: Identifies insufficient key sizes and cipher strengths
-- **Protocol Vulnerabilities**: Checks for deprecated SSL/TLS versions
-- **Algorithm Weaknesses**: Flags weak signature and cipher algorithms
+### Vulnerability Checks (~6 types)
+1. **Certificate Expired** — certificate past its `not_valid_after` date
+2. **Certificate Expiring Soon** — expires within 30 days
+3. **Weak Key Size** — RSA key smaller than 2048 bits
+4. **Deprecated Protocol Version** — SSLv2, SSLv3, TLSv1, or TLSv1.1 negotiated
+5. **Weak Cipher Suite** — negotiated cipher uses fewer than 128-bit key
+6. **Insecure Cipher Algorithm** — RC4, DES, 3DES, NULL, or EXPORT in cipher name
+7. **Weak Signature Algorithm** — SHA1 or MD5 used in certificate signature
 
 ## 🛡️ Security Considerations
 
@@ -204,11 +208,16 @@ This tool is designed for:
 - Use responsibly and ethically
 - Follow all applicable laws and regulations
 
-### Limitations
-- Network connectivity required for analysis
-- Results depend on server configuration at time of testing
-- Some advanced vulnerabilities may require specialized tools
-- False positives/negatives may occur in edge cases
+### ⚠️ Limitations
+This tool is a **basic, educational SSL/TLS analysis utility** — not a comprehensive security scanner:
+
+- **No chain-of-trust validation**: Connects with `ssl.CERT_NONE`, so the certificate chain is *read and parsed*, not cryptographically verified
+- **No HSTS checking**: Does not inspect HTTP Strict Transport Security headers
+- **No OCSP stapling check**: Does not verify certificate revocation status
+- **No Certificate Transparency log check**: Does not query CT logs
+- **Negotiated connection only**: Reports only the cipher suite and protocol version actually negotiated — not all ciphers/protocols the server supports
+- **~6–7 vulnerability types**: Does not cover the full range of known SSL/TLS weaknesses
+- **Not a replacement** for professional tools such as [testssl.sh](https://testssl.sh/), [sslyze](https://github.com/nabla-c0d3/sslyze), or [SSL Labs](https://www.ssllabs.com/ssltest/)
 
 ## 🤝 Contributing
 
